@@ -1,0 +1,201 @@
+
+
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>Single file configuration for Capistrano 3</title>
+    <link href="/assets/application.min.css" rel="stylesheet"/>
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <nav class="navbar navbar-default navbar-static-top">
+      <div class="container">
+        <button class="navbar-toggler hidden-sm-up pull-xs-right" type="button" data-toggle="collapse" data-target="#navbar-collapse-1">
+          &#9776;
+        </button>
+        <a class="navbar-brand" href="/">kardeiz.github.io</a>
+        <div id="navbar-collapse-1" class="collapse navbar-toggleable-xs pull-xs-left pull-sm-right">
+          <ul class="nav navbar-nav frontpage-links">
+            
+              <li class="nav-item nav-link pull-xs-none pull-sm-left">
+                <a href="http://twitter.com/kardeiz">
+                  <span class="fa fa-twitter"></span>
+                </a>
+              </li>
+            
+              <li class="nav-item nav-link pull-xs-none pull-sm-left">
+                <a href="https://github.com/kardeiz">
+                  <span class="fa fa-github"></span>
+                </a>
+              </li>
+            
+              <li class="nav-item nav-link pull-xs-none pull-sm-left">
+                <a href="http://stackoverflow.com/users/1614607/kardeiz">
+                  <span class="fa fa-stack-overflow"></span>
+                </a>
+              </li>
+            
+            <li class="nav-item nav-link pull-xs-none pull-sm-left dropdown">
+              <a href="#"  data-toggle="dropdown">
+                <span class="fa fa-folder"></span>
+              </a>
+              <div class="dropdown-menu">
+                
+                  <a class="dropdown-item" href="/about">
+                    About
+                  </a>
+                
+                  <a class="dropdown-item" href="/tags">
+                    Tags
+                  </a>
+                
+              </ul>
+            </li>
+          </ul>
+        </div>
+      </div>    
+    </nav>
+
+    <div class="container">      
+      <div class="body">
+        
+
+<div class="post">
+
+  <header>
+    <h2 class="page-header">Single file configuration for Capistrano 3</h2>
+    <p class="post-meta">
+      <span class="date">2015-03-13</span>
+      
+        <span class="tags">
+          
+            <a href="/tags#ruby">
+              ruby
+            </a>
+            
+              | 
+            
+          
+            <a href="/tags#capistrano">
+              capistrano
+            </a>
+                      
+            
+          
+        </span>
+      
+    </p> 
+  </header>
+
+  <article class="post-content">
+    
+<p>I really like <a href="https://github.com/capistrano/capistrano">Capistrano</a>--it's a great tool for deploying applications of any kind.</p>
+<p>I don't really like how Capistrano (by default) prefers a specific kind of directory structure, especially when I am deploying non-Ruby or simple non-Rails applications. I've worked through some issues and am pretty happy with my single <code>Capfile</code>:</p>
+<pre><code class="language-ruby">require 'capistrano/all'
+
+set :application, ENV['appname']
+set :scm, :copy
+
+set :keep_releases, 2
+
+set :release_id, `git log --pretty=format:'%h' -n 1 HEAD`
+
+set :tarball_path, &quot;/tmp/#{fetch(:application)}-#{fetch(:release_id)}.tar.gz&quot;
+set :linked_files, %w{helpers/secrets.yml}
+set :linked_dirs, %w{ tmp/pids }
+
+task :staging do
+  load 'capistrano/defaults.rb'
+  set :deploy_to, ENV['deploy_to']
+  server ENV['server'], {
+    user: ENV['user'], 
+    roles: [ 'app']
+  }
+  set :default_env, { 'APP_ENV' =&gt; 'production' }
+  configure_backend
+end
+
+require 'capistrano/deploy'
+require 'capistrano/setup'
+
+namespace :copy do
+
+  desc 'Create and upload project tarball'
+  task :deploy do 
+    tarball_path = fetch(:tarball_path)
+   `git archive --format=tar HEAD | gzip &gt; #{tarball_path} `
+    raise 'Error creating tarball.'if $? != 0
+
+    on roles(:app) do
+      execute :mkdir, '-p', release_path
+      upload! tarball_path, tarball_path
+      execute :tar, '-xzf', tarball_path, '-C', release_path
+      execute :rm, tarball_path
+    end
+  end
+
+  task :clean do
+    tarball_path = fetch(:tarball_path)
+    File.delete tarball_path if File.exists? tarball_path
+  end
+  after 'deploy:finished', 'copy:clean'
+
+  task :create_release =&gt; :deploy
+  task :check
+  task :set_current_revision
+end
+
+namespace :deploy do
+  task :bundle do
+    on roles(:app) do
+      within release_path do
+        execute :bundle, 'install', '--without', 'development test'
+      end
+    end
+  end
+end
+
+namespace :puma do
+  task :start do
+    on roles(:app) do
+      within release_path do
+        execute :bundle, %w{ exec puma -C helpers/puma.rb }
+      end
+    end
+  end
+
+  task :stop do
+    on roles(:app) do
+      within release_path do
+        execute :bundle, %w{ exec pumactl -S tmp/pids/puma.state stop }
+      end
+    end
+  end
+end
+
+before 'deploy:starting', 'puma:stop'
+after 'deploy:finished', 'deploy:bundle'
+after 'deploy:bundle', 'puma:start'
+</code></pre>
+<p>I can then deploy like: <code>rake -f Capfile staging deploy</code>.</p>
+
+
+  </article>
+
+</div>
+
+
+      </div>
+    </div>
+    <script src="/assets/application.min.js"></script>
+  </body>
+</html>

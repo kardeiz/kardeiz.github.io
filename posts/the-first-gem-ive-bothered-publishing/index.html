@@ -1,0 +1,201 @@
+
+
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>The first gem I've bothered publishing</title>
+    <link href="/assets/application.min.css" rel="stylesheet"/>
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <nav class="navbar navbar-default navbar-static-top">
+      <div class="container">
+        <button class="navbar-toggler hidden-sm-up pull-xs-right" type="button" data-toggle="collapse" data-target="#navbar-collapse-1">
+          &#9776;
+        </button>
+        <a class="navbar-brand" href="/">kardeiz.github.io</a>
+        <div id="navbar-collapse-1" class="collapse navbar-toggleable-xs pull-xs-left pull-sm-right">
+          <ul class="nav navbar-nav frontpage-links">
+            
+              <li class="nav-item nav-link pull-xs-none pull-sm-left">
+                <a href="http://twitter.com/kardeiz">
+                  <span class="fa fa-twitter"></span>
+                </a>
+              </li>
+            
+              <li class="nav-item nav-link pull-xs-none pull-sm-left">
+                <a href="https://github.com/kardeiz">
+                  <span class="fa fa-github"></span>
+                </a>
+              </li>
+            
+              <li class="nav-item nav-link pull-xs-none pull-sm-left">
+                <a href="http://stackoverflow.com/users/1614607/kardeiz">
+                  <span class="fa fa-stack-overflow"></span>
+                </a>
+              </li>
+            
+            <li class="nav-item nav-link pull-xs-none pull-sm-left dropdown">
+              <a href="#"  data-toggle="dropdown">
+                <span class="fa fa-folder"></span>
+              </a>
+              <div class="dropdown-menu">
+                
+                  <a class="dropdown-item" href="/about">
+                    About
+                  </a>
+                
+                  <a class="dropdown-item" href="/tags">
+                    Tags
+                  </a>
+                
+              </ul>
+            </li>
+          </ul>
+        </div>
+      </div>    
+    </nav>
+
+    <div class="container">      
+      <div class="body">
+        
+
+<div class="post">
+
+  <header>
+    <h2 class="page-header">The first gem I've bothered publishing</h2>
+    <p class="post-meta">
+      <span class="date">2015-01-27</span>
+      
+        <span class="tags">
+          
+            <a href="/tags#ruby">
+              ruby
+            </a>
+            
+              | 
+            
+          
+            <a href="/tags#gems">
+              gems
+            </a>
+            
+              | 
+            
+          
+            <a href="/tags#rack">
+              rack
+            </a>
+                      
+            
+          
+        </span>
+      
+    </p> 
+  </header>
+
+  <article class="post-content">
+    
+<p>This morning I put together the first small gem I've pushed to Rubygems, <a href="https://github.com/kardeiz/tiny-rack-flash"><code>TinyRackFlash</code></a>, a flash implementation for Rack applications.</p>
+<p>&quot;Flash&quot; is a short-lived session cookie, typically used to allow a short message to be passed across a re-direct. For example, you might want to re-direct a user who has just failed to authenticate, but include a message to let them know the failure reason.</p>
+<p>Rails has flash built in, and there are a number of Sinatra-specific implementations, but there aren't a lot of options for a smaller framework like Cuba. There is <a href="https://github.com/nakajima/rack-flash"><code>Rack::Flash</code></a>, but a) it has more features than I needed, b) it hasn't been updated for years (not necessarily a bad thing), and c) I didn't especially like the <code>FlashHash</code> implementation.</p>
+<p>I've used Stephen Eley's <code>FlashHash</code> implementation as found <a href="https://github.com/SFEley/sinatra-flash">here</a>. The gem can be used like:</p>
+<pre><code class="language-ruby">require 'tiny_rack_flash'
+class App &lt; Cuba # or Sinatra::Base, etc.
+  # ...
+  use TinyRackFlash do |helpers|
+    include helpers # adds `flash` method to your app class
+  end
+end
+</code></pre>
+<p>Here is the full text of the class:</p>
+<pre><code class="language-ruby">require 'delegate'
+
+class TinyRackFlash
+  
+  FlashKey   = 'tiny.rack.flash'.freeze
+  SessionKey = 'rack.session'.freeze
+  
+  # This FlashHash implmentation is taken from Stephen Eley's work
+  # at https://github.com/SFEley/sinatra-flash/blob/master/lib/sinatra/flash/hash.rb
+  # which in turn is heavily inspired by ActionDispatch::Flash::FlashHash
+  # at https://github.com/rails/rails/blob/master/actionpack/lib/action_dispatch/middleware/flash.rb
+
+  class FlashHash &lt; DelegateClass(Hash)
+    attr_reader :now, :next
+    def initialize(session)
+      @now = session || Hash.new
+      @next = Hash.new
+      super(@now)
+    end
+
+    def []=(key, value)
+      self.next[key] = value
+    end
+
+    def sweep
+      @now.replace(@next)
+      @next = Hash.new
+      @now
+    end
+
+    def keep(key=nil)
+      if key
+        @next[key] = @now[key]
+      else
+        @next.merge!(@now)
+      end
+    end
+    
+    def discard(key=nil)
+      if key
+        @next.delete(key)
+      else
+        @next = Hash.new
+      end
+    end
+  end
+
+  module Helpers
+    def flash
+      env[FlashKey] ||= begin
+        session = env[SessionKey]
+        FlashHash.new((session ? session[FlashKey] : {}))
+      end
+    end
+  end
+  
+  def initialize(app, opts={})
+    @app, @opts = app, opts
+    yield Helpers if block_given?
+  end
+  
+  def call(env)
+    res = @app.call(env)
+    env[SessionKey][FlashKey] = env[FlashKey].next if env[FlashKey]
+    res
+  end
+
+end
+</code></pre>
+
+
+  </article>
+
+</div>
+
+
+      </div>
+    </div>
+    <script src="/assets/application.min.js"></script>
+  </body>
+</html>
