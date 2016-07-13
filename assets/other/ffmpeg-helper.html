@@ -26,7 +26,7 @@
             </div>
           </div>
           <div class="form-group">
-            <label>base directory</label>
+            <label>base directory (leave blank if running command from directory containing files)</label>
             <div class="input-group">
               <input class="form-control" name="base-dir" type="text">
               <span class="input-group-btn">
@@ -49,7 +49,7 @@
           </div>
           <hr/>
           <div class="form-group">
-            <label>command</label>
+            <label>command (copy and paste into terminal/CMD prompt)</label>
             <textbox 
               class="form-control" 
               name="cmd" 
@@ -70,7 +70,7 @@
         
         var baseDir = $('[name="base-dir"]').val();
         
-        if (!(baseDir.slice(-1) == '/' || baseDir.slice(-1) == '\\')) {
+        if ((baseDir.slice(-1) != '/') && (baseDir.slice(-1) != '\\') && (baseDir != '')) {
           baseDir = baseDir + '/';
         }
 
