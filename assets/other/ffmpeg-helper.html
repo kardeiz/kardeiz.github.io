@@ -82,9 +82,14 @@
         var input     = '-i "concat:' + fileNames.join('|') + '" ';
         var opts      = '-vcodec copy -acodec aac -strict -2 ';
         var output    = '"' + $('[name="output"]').val() + '"';
+        
+        var command;
 
-        var command   = ffmpegExe + input + opts + output;
-
+        if (fileNames.length == 0) {
+          command = "Please select files to get started";
+        } else {
+          command = ffmpegExe + input + opts + output;
+        }
         $('[name="cmd"]').text(command);
       }
 
