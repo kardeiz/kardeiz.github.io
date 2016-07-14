@@ -17,31 +17,61 @@
       <div class="body">
         <form>
           <div class="form-group">
-            <label>ffmpeg exe path</label>
+            <label for="ffmpeg-exe">ffmpeg exe path</label>
             <div class="input-group">
-              <input class="form-control" name="ffmpeg-exe" type="text">
+              <input 
+                class="form-control" 
+                name="ffmpeg-exe" 
+                id="ffmpeg-exe" 
+                type="text"
+                data-default-val="ffmpeg">
               <span class="input-group-btn">
                 <button class="btn save-setting" type="button">Save</button>
               </span>
             </div>
           </div>
           <div class="form-group">
-            <label>base directory (leave blank if running command from directory containing files)</label>
+            <label for="base-dir">base directory (leave blank if running command from directory containing files)</label>
             <div class="input-group">
-              <input class="form-control" name="base-dir" type="text">
+              <input 
+                class="form-control" 
+                name="base-dir" 
+                id="base-dir" 
+                type="text"
+                data-default-val="">
               <span class="input-group-btn">
                 <button class="btn save-setting" type="button">Save</button>
               </span>
             </div>            
           </div>
           <div class="form-group">
-            <label>files</label>
-            <input class="form-control" name="files[]" type="file" multiple>
+            <label for="options">options</label>
+            <div class="input-group">
+              <input 
+                class="form-control" 
+                name="options" 
+                id="options" 
+                type="text"
+                data-default-val="-vcodec copy -acodec aac -strict -2">
+              <span class="input-group-btn">
+                <button class="btn btn-info reset-setting" type="button">Reset</button>
+                <button class="btn save-setting" type="button">Save</button>
+              </span>
+            </div>            
           </div>
           <div class="form-group">
-            <label>output filename</label>
+            <label for="files">files</label>
+            <input class="form-control" name="files[]" id="files" type="file" multiple>
+          </div>
+          <div class="form-group">
+            <label for="output">output filename</label>
             <div class="input-group">
-              <input class="form-control" name="output" type="text">
+              <input 
+                class="form-control" 
+                name="output" 
+                id="output" 
+                type="text"
+                data-default-val="output.mp4">
               <span class="input-group-btn">
                 <button class="btn save-setting" type="button">Save</button>
               </span>
@@ -50,11 +80,11 @@
           <hr/>
           <div class="form-group">
             <label>command (copy and paste into terminal/CMD prompt)</label>
-            <textbox 
+            <textarea
               class="form-control" 
               name="cmd" 
               rows="10" 
-              style="height:200px; font-family: monospace;"></textbox>
+              style="height:200px; font-family: monospace;"></textarea>
           </div>
         </form>
       </div>
@@ -68,7 +98,7 @@
           return f.name;
         }).sort();
         
-        var baseDir = $('[name="base-dir"]').val();
+        var baseDir = $.trim($('[name="base-dir"]').val());
         
         if ((baseDir.slice(-1) != '/') && (baseDir.slice(-1) != '\\') && (baseDir != '')) {
           baseDir = baseDir + '/';
@@ -80,17 +110,17 @@
 
         var ffmpegExe = $('[name="ffmpeg-exe"]').val() + ' ';
         var input     = '-i "concat:' + fileNames.join('|') + '" ';
-        var opts      = '-vcodec copy -acodec aac -strict -2 ';
-        var output    = '"' + $('[name="output"]').val() + '"';
+        var options   = $.trim($('[name="options"]').val()) + ' ';
+        var output    = '"' + $.trim($('[name="output"]').val()) + '"';
         
         var command;
 
         if (fileNames.length == 0) {
           command = "Please select files to get started";
         } else {
-          command = ffmpegExe + input + opts + output;
+          command = ffmpegExe + input + options + output;
         }
-        $('[name="cmd"]').text(command);
+        $('[name="cmd"]').val(command);
       }
 
       $('input').on('change', function(e) {
@@ -104,29 +134,47 @@
         Cookies.set(input.attr('name'), input.val());
       });
 
+      $('.reset-setting').on('click', function(e) {
+        e.preventDefault();
+        var input = $(this).closest('.input-group').find('.form-control');
+        input.val(input.data('default-val'));
+      });
+
       $(document).ready(function() {
 
         (function() {
           
-          var val = Cookies.get('ffmpeg-exe');
-          if (val == null) { val = 'ffmpeg'; }
-          $('[name="ffmpeg-exe"]').val(val);
+          var elem = $('[name="ffmpeg-exe"]');
+          var val = Cookies.get(elem.attr('name'));
+          if (val == null) { val = elem.data('default-val'); }          
+          elem.val(val);
           
         })();
 
         (function() {
           
-          var val = Cookies.get('base-dir');
-          if (val == null) { val = '/tmp/'; }
-          $('[name="base-dir"]').val(val);
-
+          var elem = $('[name="base-dir"]');
+          var val = Cookies.get(elem.attr('name'));
+          if (val == null) { val = elem.data('default-val'); }          
+          elem.val(val);
+          
+        })();
+      
+        (function() {
+          
+          var elem = $('[name="options"]');
+          var val = Cookies.get(elem.attr('name'));
+          if (val == null) { val = elem.data('default-val'); }          
+          elem.val(val);
+          
         })();
 
         (function() {
           
-          var val = Cookies.get('output');
-          if (val == null) { val = '/tmp/output.mp4'; }
-          $('[name="output"]').val(val);
+          var elem = $('[name="output"]');
+          var val = Cookies.get(elem.attr('name'));
+          if (val == null) { val = elem.data('default-val'); }          
+          elem.val(val);
           
         })();
 
