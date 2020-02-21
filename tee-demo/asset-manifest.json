@@ -1,0 +1,19 @@
+{
+  "files": {
+    "main.js": "/tee-demo/static/js/main.ca5d25c4.chunk.js",
+    "main.js.map": "/tee-demo/static/js/main.ca5d25c4.chunk.js.map",
+    "runtime-main.js": "/tee-demo/static/js/runtime-main.701cf854.js",
+    "runtime-main.js.map": "/tee-demo/static/js/runtime-main.701cf854.js.map",
+    "static/js/2.a84dbafb.chunk.js": "/tee-demo/static/js/2.a84dbafb.chunk.js",
+    "static/js/2.a84dbafb.chunk.js.map": "/tee-demo/static/js/2.a84dbafb.chunk.js.map",
+    "index.html": "/tee-demo/index.html",
+    "precache-manifest.c495449e67ca2f692cd980ff38b6161f.js": "/tee-demo/precache-manifest.c495449e67ca2f692cd980ff38b6161f.js",
+    "service-worker.js": "/tee-demo/service-worker.js",
+    "static/js/2.a84dbafb.chunk.js.LICENSE": "/tee-demo/static/js/2.a84dbafb.chunk.js.LICENSE"
+  },
+  "entrypoints": [
+    "static/js/runtime-main.701cf854.js",
+    "static/js/2.a84dbafb.chunk.js",
+    "static/js/main.ca5d25c4.chunk.js"
+  ]
+}
